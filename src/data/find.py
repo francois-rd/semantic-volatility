@@ -1,5 +1,6 @@
 import pandas as pd
 import pickle
+import math
 import os
 
 from utils.pathing import (
@@ -84,7 +85,9 @@ class WordUsageFinder:
         self.mapper.save(self.config.map_file)
 
     def _process(self, body, created):
-        comment_id = self.mapper.new_item_id()
+        comment_id = self.mapper.new_item_id()  # Must happen before isnan().
+        if isinstance(body, float) and math.isnan(body):
+            return
         for word in body.split():
             usage = self.word_usage.setdefault(word, [float('inf'), 0, []])
             usage[0] = min(created, usage[0])  # First usage.
