@@ -7,6 +7,7 @@ from utils.pathing import (
     USAGES_DATA_DIR,
     NEO_DATA_DIR,
     USAGE_DICT_FILE,
+    CAP_FREQ_FILE,
     SURVIVING_FILE,
     DYING_FILE
 )
@@ -29,6 +30,10 @@ class BasicDetectorConfig(CommandConfigBase):
 
         usage_file: (type: str, default: utils.pathing.USAGE_DICT_FILE)
             Path (relative to 'input_dir') of the usage dictionary input file.
+
+        cap_freq_file: (type: str, default: utils.pathing.CAP_FREQ_FILE)
+            Path (relative to 'input_dir') of the capitalization frequency input
+            file.
 
         output_dir: (type: Path-like, default: utils.pathing.NEO_DATA_DIR)
             Directory (either absolute or relative to 'experiment_dir') in which
@@ -56,6 +61,7 @@ class BasicDetectorConfig(CommandConfigBase):
         self.input_dir = kwargs.pop('input_dir', USAGES_DATA_DIR)
         self.output_dir = kwargs.pop('output_dir', NEO_DATA_DIR)
         self.usage_file = kwargs.pop('usage_file', USAGE_DICT_FILE)
+        self.cap_freq_file = kwargs.pop('cap_freq_file', CAP_FREQ_FILE)
         self.surviving_file = kwargs.pop('surviving_file', SURVIVING_FILE)
         self.dying_file = kwargs.pop('dying_file', DYING_FILE)
         self.min_usage_cutoff = kwargs.pop('min_usage_cutoff', 1)
@@ -72,6 +78,7 @@ class BasicDetectorConfig(CommandConfigBase):
         self.input_dir = paths.usages_data_dir
         self.output_dir = paths.neo_data_dir
         self.usage_file = makepath(self.input_dir, self.usage_file)
+        self.cap_freq_file = makepath(self.input_dir, self.cap_freq_file)
         self.surviving_file = makepath(self.output_dir, self.surviving_file)
         self.dying_file = makepath(self.output_dir, self.dying_file)
         return self
@@ -93,9 +100,13 @@ class BasicDetector:
     def run(self) -> None:
         with open(self.config.usage_file, 'rb') as file:
             usage_dict = pickle.load(file)
+        with open(self.config.cap_freq_file, 'rb') as file:
+            cap_freq = pickle.load(file)
+        print({k: v for k, v in cap_freq.items() if v < -2})
         neologisms = dict((word, usage) for word, usage in usage_dict.items()
                           if not self.timeline.is_early(usage[0])
-                          and len(usage[2]) >= self.config.min_usage_cutoff)
+                          and len(usage[2]) >= self.config.min_usage_cutoff
+                          and cap_freq[word] > 0)  # Not >=
         surviving, dying = {}, {}
         for word, usage in neologisms.items():
             if self.timeline.is_late(usage[1]):

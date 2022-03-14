@@ -46,6 +46,7 @@ USAGES_DATA_DIR = makepath(DATA_DIR, "usages")
 NEO_DATA_DIR = makepath(DATA_DIR, "neologisms")
 
 # Recurring files.
+CAP_FREQ_FILE = "cap_freq.pickle"
 USAGE_DICT_FILE = "usage_dict.pickle"
 ID_MAP_FILE = "id_map.pickle"
 SURVIVING_FILE = "surviving.pickle"
