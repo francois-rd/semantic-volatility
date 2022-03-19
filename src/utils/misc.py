@@ -1,3 +1,4 @@
+from collections import defaultdict
 import pickle
 import os
 
@@ -63,3 +64,15 @@ class ItemBlockMapper:
         for block_id in reversed(self.id_map.keys()):  # Dicts ordered in Py>3.6
             if block_id <= item_id:
                 return self.id_map[block_id], item_id - block_id
+
+
+def make_file_row_map(usage_dict_file, id_map_file):
+    with open(usage_dict_file, 'rb') as file:
+        usage_dict = pickle.load(file)
+    file_row_map = defaultdict(lambda: defaultdict(list))
+    mapper = ItemBlockMapper.load(id_map_file)
+    for word, usage in usage_dict.items():
+        for comment_id in usage[2]:
+            file, row = mapper.get_block_id(comment_id)
+            file_row_map[file][row].append(word)
+    return file_row_map
