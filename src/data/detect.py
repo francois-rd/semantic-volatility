@@ -102,7 +102,6 @@ class BasicDetector:
             usage_dict = pickle.load(file)
         with open(self.config.cap_freq_file, 'rb') as file:
             cap_freq = pickle.load(file)
-        print({k: v for k, v in cap_freq.items() if v < -2})
         neologisms = dict((word, usage) for word, usage in usage_dict.items()
                           if not self.timeline.is_early(usage[0])
                           and len(usage[2]) >= self.config.min_usage_cutoff
