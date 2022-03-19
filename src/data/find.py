@@ -13,7 +13,7 @@ from utils.pathing import (
     ID_MAP_FILE
 )
 from utils.config import CommandConfigBase
-from utils.misc import ItemBlockMapper
+from utils.data_management import ItemBlockMapper
 
 
 class WordUsageFinderConfig(CommandConfigBase):

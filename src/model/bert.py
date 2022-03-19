@@ -18,7 +18,7 @@ from utils.pathing import (
     DYING_FILE,
     ID_MAP_FILE
 )
-from utils.misc import make_file_row_map
+from utils.data_management import make_file_row_map
 from utils.config import CommandConfigBase
 
 DEFAULT_TOK_AGG = 'mean'
