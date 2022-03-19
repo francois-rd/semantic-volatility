@@ -18,7 +18,7 @@ from utils.pathing import (
     DYING_FILE,
     ID_MAP_FILE
 )
-from utils.data_management import make_file_row_map
+from utils.data_management import make_file_row_map, from_cleaned
 from utils.config import CommandConfigBase
 
 DEFAULT_TOK_AGG = 'mean'
@@ -174,7 +174,7 @@ class Bert:
         file_row_map = make_file_row_map(input_path, self.config.map_file)
         embs = {}  # Can't use defaultdict because we need to pickle after.
         for file, row_map in file_row_map.items():
-            self._process_file(file.replace("cleaned-", ""), row_map, embs)
+            self._process_file(from_cleaned(file), row_map, embs)
         with open(output_path, 'wb') as file:
             pickle.dump(embs, file, protocol=pickle.HIGHEST_PROTOCOL)
 

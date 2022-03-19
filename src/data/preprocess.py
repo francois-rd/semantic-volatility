@@ -15,6 +15,7 @@ from utils.pathing import (
     CAP_FREQ_FILE
 )
 from utils.config import CommandConfigBase
+import utils.data_management as dm
 
 
 class RedditPreprocessorConfig(CommandConfigBase):
@@ -83,7 +84,7 @@ class RedditPreprocessor:
             for file in files:
                 df = pd.read_csv(makepath(root, file))
                 df['body'] = df['body'].map(self._clean)
-                path = makepath(self.config.output_dir, "cleaned-" + file)
+                path = makepath(self.config.output_dir, dm.to_cleaned(file))
                 df.to_csv(path, index=False, columns=list(df.axes[1]))
         with open(self.config.cap_freq_file, 'wb') as file:
             pickle.dump(self.cap_freq, file, protocol=pickle.HIGHEST_PROTOCOL)

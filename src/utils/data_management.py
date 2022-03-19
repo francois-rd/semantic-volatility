@@ -3,48 +3,70 @@ import pickle
 import os
 
 
-def parts_from_filename(file):
-    parts = os.path.splitext(file)[0].split("-")
-    if parts[0] == 'cleaned':
-        parts[0] = "cleaned=True"
-    else:
-        parts.insert(0, "cleaned=False")
-    return dict(part.split("=") for part in parts)
+def parts(filename):
+    parts_ = os.path.splitext(filename)[0].split("-")
+    cleaned = parts_[0] == 'cleaned'
+    if cleaned:
+        del parts_[0]
+    return dict([("cleaned", cleaned)] + [tuple(p.split("=")) for p in parts_])
 
 
-class ItemBlockMapper:
+def make(start, end, subreddit, subreddit_id, cleaned=False):
+    if not cleaned:
+        return "start={}-end={}-subreddit={}-subreddit_id={}.csv".format(
+            start, end, subreddit, subreddit_id)
+    return "cleaned-start={}-end={}-subreddit={}-subreddit_id={}.csv".format(
+        start, end, subreddit, subreddit_id)
+
+
+def change_cleaned(filename, cleaned):
+    parts_ = parts(filename)
+    parts_['cleaned'] = cleaned
+    return make(**parts_)
+
+
+def to_cleaned(filename):
+    return change_cleaned(filename, True)
+
+
+def from_cleaned(filename):
+    return change_cleaned(filename, False)
+
+
+class RowFileMapper:
     def __init__(self):
         """
-        Compactly maps consecutive Item IDs to (Block IDs, block index) pairs,
-        and vice versa. Useful for when a direct 1:1 map would result in OOM.
+        Compactly creates a unique mapping between consecutive row indices of a
+        sequence of filenames, and vice versa. Useful for when a direct 1:1 map
+        would result in OOM errors.
 
         Use pattern:
 
         # Setting up the mapping.
-        mapper = ItemBlockMapper()
-        for block in block_list:
-            mapper.new_block(block.id)
-            for item in block:
-                item_id = mapper.new_item_id()
-                # Business logic involving item_id
+        mapper = RowFileMapper()
+        for filename in file_list:
+            mapper.new_file(filename)
+            for row in get_rows_from(filename):
+                row_id = mapper.new_row_id()
+                # Business logic involving row_id
                 ...
         mapper.save('my_id_map.pickle')  # Always pickles.
 
         # Later reverse mapping.
-        mapper = ItemBlockMapper.load('my_id_map.pickle')
-        for item_id in item_id_list:
-            block_id, block_index = mapper.get_block_id(item_id)
-            item = block_list[block_id][block_index]
-            # Business logic involving item
+        mapper = RowFileMapper.load('my_id_map.pickle')
+        for row_id in row_id_list:
+            filename, row_index = mapper.reverse(row_id)
+            row = get_rows_from(filename)[row_index]
+            # Business logic involving row
             ...
         """
         self.id = 0
         self.id_map = {}
 
-    def new_block(self, block_id):
-        self.id_map[self.id] = block_id
+    def new_file(self, filename):
+        self.id_map[self.id] = filename
 
-    def new_item_id(self):
+    def new_row_id(self):
         current_id = self.id
         self.id += 1
         return current_id
@@ -55,24 +77,24 @@ class ItemBlockMapper:
 
     @staticmethod
     def load(filename):
-        mapper = ItemBlockMapper()
+        mapper = RowFileMapper()
         with open(filename, 'rb') as file:
             mapper.id_map = pickle.load(file)
         return mapper
 
-    def get_block_id(self, item_id):
-        for block_id in reversed(self.id_map.keys()):  # Dicts ordered in Py>3.6
-            if block_id <= item_id:
-                return self.id_map[block_id], item_id - block_id
+    def reverse(self, row_id):
+        for file_id in reversed(self.id_map.keys()):  # Dicts ordered in Py>3.6
+            if file_id <= row_id:
+                return self.id_map[file_id], row_id - file_id
 
 
 def make_file_row_map(usage_dict_file, id_map_file):
     with open(usage_dict_file, 'rb') as file:
         usage_dict = pickle.load(file)
     file_row_map = defaultdict(lambda: defaultdict(list))
-    mapper = ItemBlockMapper.load(id_map_file)
+    mapper = RowFileMapper.load(id_map_file)
     for word, usage in usage_dict.items():
         for comment_id in usage[2]:
-            file, row = mapper.get_block_id(comment_id)
+            file, row = mapper.reverse(comment_id)
             file_row_map[file][row].append(word)
     return file_row_map

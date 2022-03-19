@@ -8,6 +8,7 @@ from utils.pathing import EXPERIMENT_DIR, CACHE_DIR, RAW_DATA_DIR
 from utils.pathing import makepath, ExperimentPaths
 from utils.config import CommandConfigBase
 from utils.timeline import TimelineConfig
+import utils.data_management as dm
 
 
 class RedditDownloaderConfig(CommandConfigBase):
@@ -103,9 +104,8 @@ class RedditDownloader:
         return list(comments)
 
     def _save_comments(self, comments, subreddit, subreddit_id):
-        filename = "start={}-end={}-subreddit={}-subreddit_id={}.csv".format(
-            self.timeline_config.start, self.timeline_config.end,
-            subreddit, subreddit_id)
+        tl = self.timeline_config
+        filename = dm.make(tl.start, tl.end, subreddit, subreddit_id)
         filepath = makepath(self.config.output_dir, filename)
         df = pd.DataFrame(comments)
         df = df[df['body'].str.strip().astype(bool)]  # Remove empty strings.

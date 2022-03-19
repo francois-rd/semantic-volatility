@@ -13,7 +13,7 @@ from utils.pathing import (
     ID_MAP_FILE
 )
 from utils.config import CommandConfigBase
-from utils.data_management import ItemBlockMapper
+from utils.data_management import RowFileMapper
 
 
 class WordUsageFinderConfig(CommandConfigBase):
@@ -71,12 +71,12 @@ class WordUsageFinder:
         """
         self.config = config
         self.word_usage = {}
-        self.mapper = ItemBlockMapper()
+        self.mapper = RowFileMapper()
 
     def run(self) -> None:
         for root, _, files in os.walk(self.config.input_dir):
             for file in files:
-                self.mapper.new_block(file)
+                self.mapper.new_file(file)
                 df = pd.read_csv(makepath(root, file))
                 for b, c in zip(df['body'], df['created_utc']):
                     self._process(b, c)
@@ -85,7 +85,7 @@ class WordUsageFinder:
         self.mapper.save(self.config.map_file)
 
     def _process(self, body, created):
-        comment_id = self.mapper.new_item_id()  # Must happen before isnan().
+        comment_id = self.mapper.new_row_id()  # Must happen before isnan().
         if isinstance(body, float) and math.isnan(body):
             return
         for word in body.split():
