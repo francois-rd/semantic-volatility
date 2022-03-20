@@ -135,7 +135,6 @@ class TimeSeries:
     def _do_run(self, input_path, output_path):
         with open(input_path, 'rb') as file:
             embs = pickle.load(file)
-
         time_series = {word: self._process(embs[word]) for word in embs}
         with open(output_path, 'wb') as file:
             pickle.dump(time_series, file, protocol=pickle.HIGHEST_PROTOCOL)
