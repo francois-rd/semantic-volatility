@@ -5,7 +5,8 @@ from commands import (
     RedditPreprocessorCommand,
     WordUsageFinderCommand,
     BasicDetectorCommand,
-    BertCommand
+    BertCommand,
+    TimeSeriesCommand
 )
 
 if __name__ == '__main__':
@@ -28,6 +29,8 @@ if __name__ == '__main__':
     # Modeling commands.
     BertCommand(subparsers.add_parser(
         'bert', help='embed detected new words with a BERT-like model'))
+    TimeSeriesCommand(subparsers.add_parser(
+        'time-series', help='compute multiple time series from embeddings'))
 
     args = main_parser.parse_args()
     args.func(args)

@@ -47,6 +47,7 @@ NEO_DATA_DIR = makepath(DATA_DIR, "neologisms")
 
 # Model-specific paths.
 EMBEDDINGS_DIR = makepath(MODEL_DIR, "embeddings")
+TIME_SERIES_DIR = makepath(MODEL_DIR, "time_series")
 
 # Recurring files.
 CAP_FREQ_FILE = "cap_freq.pickle"
@@ -68,7 +69,8 @@ class ExperimentPaths:
             preproc_data_dir=PREPROC_DATA_DIR,
             usages_data_dir=USAGES_DATA_DIR,
             neo_data_dir=NEO_DATA_DIR,
-            embeddings_dir=EMBEDDINGS_DIR
+            embeddings_dir=EMBEDDINGS_DIR,
+            time_series_dir=TIME_SERIES_DIR
     ):
         """
         Utilities for paths relating to the current experiment.
@@ -90,6 +92,7 @@ class ExperimentPaths:
         self.usages_data_dir = self._process(usages_data_dir)
         self.neo_data_dir = self._process(neo_data_dir)
         self.embeddings_dir = self._process(embeddings_dir)
+        self.time_series_dir = self._process(time_series_dir)
 
     def _process(self, path, root=None):
         root = root or self.experiment_dir
