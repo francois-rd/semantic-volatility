@@ -44,7 +44,7 @@ class TimeSeriesConfig(CommandConfigBase):
             Path (relative to 'input_dir') of the surviving new word embeddings
             file.
 
-        dying_input_path: (type: str, default: utils.pathing.DYING_FILE)
+        dying_input_file: (type: str, default: utils.pathing.DYING_FILE)
             Path (relative to 'input_dir') of the dying new word embeddings
             file.
 
