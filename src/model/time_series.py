@@ -176,14 +176,15 @@ class TimeSeries:
         return time_slices
 
     def _shuffle(self, word_embs, time_slices):
-        start = self.config.timeline_config['start']
         end = self.config.timeline_config['end']
         if self.config.shuffle_option == ShuffleOptions.FULL:
+            start = self.timeline.early_cutoff
             return self._time_slices(
                 [(e, random.randint(start, end)) for e, _ in word_embs])
         elif self.config.shuffle_option == ShuffleOptions.NUM_SLICES:
             last = self.timeline.slice_of(end)
-            slices = random.sample(range(last + 1), len(time_slices))
+            offset = self.config.timeline_config['early']
+            slices = random.sample(range(last + 1 - offset), len(time_slices))
             return self._random_assignment(word_embs, slices)
         elif self.config.shuffle_option == ShuffleOptions.SAME_SLICES:
             return self._random_assignment(word_embs, list(time_slices.keys()))

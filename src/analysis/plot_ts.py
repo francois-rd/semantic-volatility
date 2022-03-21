@@ -87,6 +87,7 @@ class PlotTimeSeries:
         self.config = config
         tl_config = TimelineConfig(**self.config.timeline_config)
         self.max_time_slice = Timeline(tl_config).slice_of(tl_config.end)
+        self.max_time_slice -= tl_config.early
         self.slice_size = tl_config.slice_size
         self.style = None
 
@@ -161,7 +162,7 @@ class PlotTimeSeries:
         return swapped
 
     def _finalize_plot(self, *, yticks, ylabel, title, filename):
-        plt.xticks(np.arange(self.max_time_slice))
+        plt.xticks(np.arange(self.max_time_slice + 1))
         plt.gca().xaxis.set_major_locator(MultipleLocator(5))
         plt.gca().xaxis.set_minor_locator(MultipleLocator(1))
         plt.yticks(yticks)
