@@ -6,6 +6,7 @@ import pickle
 
 from utils.pathing import (
     makepath,
+    ensure_path,
     ExperimentPaths,
     EXPERIMENT_DIR,
     TIME_SERIES_DIR,
@@ -87,11 +88,16 @@ class PlotTimeSeries:
         tl_config = TimelineConfig(**self.config.timeline_config)
         self.max_time_slice = Timeline(tl_config).slice_of(tl_config.end)
         self.slice_size = tl_config.slice_size
+        self.style = None
 
     def run(self) -> None:
-        surviving = self._do_run("Surviving", self.config.surviving_file)
-        #dying = self._do_run("Dying", self.config.dying_file)
-        #self._plot(surviving, dying)
+        styles = ['seaborn-colorblind', 'seaborn-deep', 'dark_background']
+        for style in styles:
+            self.style = style   # Can't get this programmatically from context.
+            with plt.style.context(style):
+                surv = self._do_run("Surviving", self.config.surviving_file)
+                #dying = self._do_run("Dying", self.config.dying_file)
+                #self._plot(surv, dying)
 
     def _do_run(self, word_type, input_path):
         with open(input_path, 'rb') as file:
@@ -114,10 +120,15 @@ class PlotTimeSeries:
             # All time series plotted in one graph.
             plt.figure()
             for word, time_series in anecdotes.items():
+                c = None
                 for id_ in ['main', 'control']:
                     ts = time_series[ts_type[f'{id_}_id']]
                     label = word + (" (C)" if id_ == 'control' else "")
-                    plt.plot(np.arange(len(ts)), ts, label=label)
+                    x = np.arange(len(ts))
+                    if id_ == 'main':
+                        c = plt.plot(x, ts, label=label)[0].get_color()
+                    else:
+                        plt.plot(x, ts, label=label, color=c, linestyle='--')
             self._finalize_plot(
                 yticks=yticks,
                 ylabel=ylabel,
@@ -158,7 +169,8 @@ class PlotTimeSeries:
         plt.ylabel(ylabel)
         plt.title(title)
         plt.legend()
-        plt.savefig(makepath(self.config.output_dir, filename))
+        sub_dir = ensure_path(makepath(self.config.output_dir, self.style))
+        plt.savefig(makepath(sub_dir, filename))
         plt.close()
 
     def _plot(self, *args):
