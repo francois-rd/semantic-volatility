@@ -6,7 +6,8 @@ from commands import (
     WordUsageFinderCommand,
     BasicDetectorCommand,
     BertCommand,
-    TimeSeriesCommand
+    TimeSeriesCommand,
+    PlotTimeSeriesCommand
 )
 
 if __name__ == '__main__':
@@ -31,6 +32,10 @@ if __name__ == '__main__':
         'bert', help='embed detected new words with a BERT-like model'))
     TimeSeriesCommand(subparsers.add_parser(
         'time-series', help='compute multiple time series from embeddings'))
+
+    # Analysis commands.
+    PlotTimeSeriesCommand(subparsers.add_parser(
+        'plot-ts', help='plot the multiple resulting time series'))
 
     args = main_parser.parse_args()
     args.func(args)

@@ -27,6 +27,23 @@ class ShuffleOptions:
         return [attr[k] for k in attr.keys() if not k.startswith('__')]
 
 
+def define_ts_type(initialism, full_name):
+    return {
+        'main_id': initialism.lower(),
+        'control_id': initialism.lower() + '_control',
+        'main_full_name': f"{full_name} ({initialism})",
+        'control_full_name': f"{initialism} Control",
+        'main_short_name': initialism,
+        'control_short_name': f"{initialism}(C)"
+    }
+
+
+class TimeSeriesTypes:
+    APCD = define_ts_type("APCD", "Average Pairwise Cosine Distance")
+    CCD = define_ts_type("CCD", "Consecutive Cosine Distance")
+    ALL_TYPES = [APCD, CCD]
+
+
 class TimeSeriesConfig(CommandConfigBase):
     def __init__(self, **kwargs):
         """
@@ -140,14 +157,15 @@ class TimeSeries:
             pickle.dump(time_series, file, protocol=pickle.HIGHEST_PROTOCOL)
 
     def _process(self, word_embs):
-        emb_length = word_embs[0][0].shape[0]
+        emb_len = word_embs[0][0].shape[0]
         time_slices = self._time_slices(word_embs)
-        time_slices_random = self._shuffle(word_embs, time_slices)
+        time_slices_control = self._shuffle(word_embs, time_slices)
+        apcd, ccd = TimeSeriesTypes.APCD, TimeSeriesTypes.CCD
         return {
-            'apcd': self._process_apcd(time_slices),
-            'apcd_control': self._process_apcd(time_slices_random),
-            'cdcae': self._process_cdcae(time_slices, emb_length),
-            'cdcae_control': self._process_cdcae(time_slices_random, emb_length)
+            apcd['main_id']: self._process_apcd(time_slices),
+            apcd['control_id']: self._process_apcd(time_slices_control),
+            ccd['main_id']: self._process_ccd(time_slices, emb_len),
+            ccd['control_id']: self._process_ccd(time_slices_control, emb_len)
         }
 
     def _time_slices(self, word_embs):
@@ -201,7 +219,7 @@ class TimeSeries:
         return time_series
 
     @staticmethod
-    def _process_cdcae(time_slices, emb_length):
+    def _process_ccd(time_slices, emb_length):
         offset = min(time_slices)
         time_series = [[0.0] * emb_length] * (max(time_slices) - offset + 1)
         for slice_id, slice_embs in time_slices.items():
