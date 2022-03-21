@@ -1,3 +1,4 @@
+from matplotlib.ticker import MultipleLocator
 import matplotlib.pyplot as plt
 import numpy as np
 import random
@@ -85,6 +86,7 @@ class PlotTimeSeries:
         self.config = config
         tl_config = TimelineConfig(**self.config.timeline_config)
         self.max_time_slice = Timeline(tl_config).slice_of(tl_config.end)
+        self.slice_size = tl_config.slice_size
 
     def run(self) -> None:
         surviving = self._do_run("Surviving", self.config.surviving_file)
@@ -148,9 +150,11 @@ class PlotTimeSeries:
         return swapped
 
     def _finalize_plot(self, *, yticks, ylabel, title, filename):
-        plt.xticks(np.arange(0, self.max_time_slice, 5))
+        plt.xticks(np.arange(self.max_time_slice))
+        plt.gca().xaxis.set_major_locator(MultipleLocator(5))
+        plt.gca().xaxis.set_minor_locator(MultipleLocator(1))
         plt.yticks(yticks)
-        plt.xlabel("Time Index")
+        plt.xlabel(f"Time Index ({self.slice_size}s since first appearance)")
         plt.ylabel(ylabel)
         plt.title(title)
         plt.legend()
