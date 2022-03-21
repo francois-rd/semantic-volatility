@@ -182,9 +182,8 @@ class TimeSeries:
             return self._time_slices(
                 [(e, random.randint(start, end)) for e, _ in word_embs])
         elif self.config.shuffle_option == ShuffleOptions.NUM_SLICES:
-            first = self.timeline.slice_of(start)
             last = self.timeline.slice_of(end)
-            slices = random.sample(range(first, last + 1), len(time_slices))
+            slices = random.sample(range(last + 1), len(time_slices))
             return self._random_assignment(word_embs, slices)
         elif self.config.shuffle_option == ShuffleOptions.SAME_SLICES:
             return self._random_assignment(word_embs, list(time_slices.keys()))
