@@ -12,6 +12,7 @@ from utils.pathing import (
     SURVIVING_FILE,
     DYING_FILE
 )
+from utils.timeline import TimelineConfig, Timeline
 from model.time_series import TimeSeriesTypes
 from utils.config import CommandConfigBase
 
@@ -44,6 +45,10 @@ class PlotTimeSeriesConfig(CommandConfigBase):
         num_anecdotes: (type: int, default: 5)
             Number of anecdotal words to randomly sample for plotting.
 
+        timeline_config: (type: dict, default: {})
+            Timeline configurations to use. Any given parameters override the
+            defaults. See utils.timeline.TimelineConfig for details.
+
         :param kwargs: optional configs to overwrite defaults (see above)
         """
         self.experiment_dir = kwargs.pop('experiment_dir', EXPERIMENT_DIR)
@@ -52,6 +57,7 @@ class PlotTimeSeriesConfig(CommandConfigBase):
         self.dying_file = kwargs.pop('dying_file', DYING_FILE)
         self.output_dir = kwargs.pop('output_dir', PLOT_TS_DIR)
         self.num_anecdotes = kwargs.pop('num_anecdotes', 5)
+        self.timeline_config = kwargs.pop('timeline_config', {})
         super().__init__(**kwargs)
 
     def make_paths_absolute(self):
@@ -77,6 +83,8 @@ class PlotTimeSeries:
         :param config: see PlotTimeSeriesConfig for details
         """
         self.config = config
+        tl_config = TimelineConfig(**self.config.timeline_config)
+        self.max_time_slice = Timeline(tl_config).slice_of(tl_config.end)
 
     def run(self) -> None:
         surviving = self._do_run("Surviving", self.config.surviving_file)
@@ -94,8 +102,13 @@ class PlotTimeSeries:
     def _plot_anecdotes(self, word_type, all_time_series_by_word):
         anecdotes = {k: all_time_series_by_word[k] for k in random.sample(
             list(all_time_series_by_word), self.config.num_anecdotes)}
+        yticks = np.arange(0, 1.2, 0.2)
         for ts_type in TimeSeriesTypes.ALL_TYPES:
+            # Define common variables once.
             ts_type_name = ts_type['main_short_name']
+            ylabel = ts_type['main_full_name']
+            filename = f"anecdotal-{word_type}-{ts_type_name}-"
+
             # All time series plotted in one graph.
             plt.figure()
             for word, time_series in anecdotes.items():
@@ -103,14 +116,13 @@ class PlotTimeSeries:
                     ts = time_series[ts_type[f'{id_}_id']]
                     label = word + (" (C)" if id_ == 'control' else "")
                     plt.plot(np.arange(len(ts)), ts, label=label)
-            plt.title(f"{ts_type_name} Time Series for Randomly-Selected "
-                      f"{word_type} Words")
-            plt.xlabel("Time Index")
-            plt.ylabel(ts_type['main_full_name'])
-            plt.legend()
-            filename = f"anecdotal-{word_type}-{ts_type_name}-all.pdf"
-            plt.savefig(makepath(self.config.output_dir, filename))
-            plt.close()
+            self._finalize_plot(
+                yticks=yticks,
+                ylabel=ylabel,
+                title=f"{ts_type_name} Time Series for Randomly-Selected "
+                      f"{word_type} Words",
+                filename=filename + "all.pdf"
+            )
 
             # Each time series in its own graph.
             for word, time_series in anecdotes.items():
@@ -119,14 +131,13 @@ class PlotTimeSeries:
                     ts = time_series[ts_type[f'{id_}_id']]
                     label = ts_type[f'{id_}_short_name']
                     plt.plot(np.arange(len(ts)), ts, label=label)
-                plt.title(f"{ts_type_name} Time Series for '{word}' "
-                          f"({word_type})")
-                plt.xlabel("Time Index")
-                plt.ylabel(ts_type['main_full_name'])
-                plt.legend()
-                filename = f"anecdotal-{word_type}-{ts_type_name}-{word}.pdf"
-                plt.savefig(makepath(self.config.output_dir, filename))
-                plt.close()
+                self._finalize_plot(
+                    yticks=yticks,
+                    ylabel=ylabel,
+                    title=f"{ts_type_name} Time Series for '{word}' "
+                          f"({word_type})",
+                    filename=filename + f"{word}.pdf"
+                )
 
     @staticmethod
     def _swap_keys(all_time_series_by_word):
@@ -136,10 +147,23 @@ class PlotTimeSeries:
                 swapped.setdefault(time_series_name, []).append(time_series)
         return swapped
 
+    def _finalize_plot(self, *, yticks, ylabel, title, filename):
+        plt.xticks(np.arange(0, self.max_time_slice, 5))
+        plt.yticks(yticks)
+        plt.xlabel("Time Index")
+        plt.ylabel(ylabel)
+        plt.title(title)
+        plt.legend()
+        plt.savefig(makepath(self.config.output_dir, filename))
+        plt.close()
+
     def _plot(self, *args):
-        # Mostly follow 'old', but looping args and looping type.
+        yticks = np.arange(-0.2, 1.4, 0.2)
         for ts_type in TimeSeriesTypes.ALL_TYPES:
             ts_type_name = ts_type['main_short_name']
+            ylabel = ts_type['main_full_name']
+            title = f"{ts_type_name} Time Series"
+            filename = f"{'-'.join(wt for wt, _ in args)}-{ts_type_name}.pdf"
             plt.figure()
             for word_type, swapped_ts in args:
                 for id_ in ['main', 'control']:
@@ -159,16 +183,13 @@ class PlotTimeSeries:
                     means = np.array(means)
                     stds = np.array(stds)
 
-                    # Plot means and stds.
+                    # Plot means, stds, and linear regression line.
                     x = np.arange(len(means))
                     label = word_type + (" (C)" if id_ == 'control' else "")
-                    mean_line, = plt.plot(x, means, label=label)
+                    color = plt.plot(x, means, label=label)[0].get_color()
                     plt.fill_between(x, means - stds, means + stds,
-                                     color=mean_line.get_color(), alpha=0.2)
-            plt.title(f"{ts_type_name} Time Series")
-            plt.xlabel("Time Index")
-            plt.ylabel(ts_type['main_full_name'])
-            plt.legend()
-            filename = f"{'-'.join(wt for wt, _ in args)}-{ts_type_name}.pdf"
-            plt.savefig(makepath(self.config.output_dir, filename))
-            plt.close()
+                                     color=color, alpha=0.2)
+                    poly1d_fn = np.poly1d(np.polyfit(x, means, 1))
+                    plt.plot(x, poly1d_fn(x), color=color, linestyle='dashed')
+            self._finalize_plot(yticks=yticks, ylabel=ylabel,
+                                title=title, filename=filename)
