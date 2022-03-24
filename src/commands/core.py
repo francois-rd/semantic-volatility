@@ -27,6 +27,10 @@ class CommandBase:
                  "its contents are used in place of the default configs."
         )
         subparser.add_argument(
+            '--seed', type=int, metavar='SEED', default=314159,
+            help="The random seed to use. Defaults to 314159."
+        )
+        subparser.add_argument(
             '--dry-run', action='store_true', default=False,
             help="If present, load config and then exit."
         )

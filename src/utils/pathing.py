@@ -55,7 +55,6 @@ TIME_SERIES_DIR = makepath(MODEL_DIR, "time_series")
 PLOT_TS_DIR = makepath(RESULTS_DIR, "plot_ts")
 
 # Recurring files.
-CAP_FREQ_FILE = "cap_freq.pickle"
 USAGE_DICT_FILE = "usage_dict.pickle"
 ID_MAP_FILE = "id_map.pickle"
 SURVIVING_FILE = "surviving.pickle"

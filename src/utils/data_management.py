@@ -5,32 +5,12 @@ import os
 
 def parts(filename):
     parts_ = os.path.splitext(filename)[0].split("-")
-    cleaned = parts_[0] == 'cleaned'
-    if cleaned:
-        del parts_[0]
-    return dict([("cleaned", cleaned)] + [tuple(p.split("=")) for p in parts_])
+    return dict(tuple(p.split("=")) for p in parts_)
 
 
-def make(start, end, subreddit, subreddit_id, cleaned=False):
-    if not cleaned:
-        return "start={}-end={}-subreddit={}-subreddit_id={}.csv".format(
-            start, end, subreddit, subreddit_id)
-    return "cleaned-start={}-end={}-subreddit={}-subreddit_id={}.csv".format(
+def make(start, end, subreddit, subreddit_id):
+    return "start={}-end={}-subreddit={}-subreddit_id={}.csv".format(
         start, end, subreddit, subreddit_id)
-
-
-def change_cleaned(filename, cleaned):
-    parts_ = parts(filename)
-    parts_['cleaned'] = cleaned
-    return make(**parts_)
-
-
-def to_cleaned(filename):
-    return change_cleaned(filename, True)
-
-
-def from_cleaned(filename):
-    return change_cleaned(filename, False)
 
 
 class RowFileMapper:

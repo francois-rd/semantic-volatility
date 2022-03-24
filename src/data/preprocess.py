@@ -13,7 +13,6 @@ from utils.pathing import (
     PREPROC_DATA_DIR,
     EXIST_DATA_DIR,
     CAP_DATA_DIR,
-    CAP_FREQ_FILE,
     EXISTING_FILE
 )
 from utils.config import CommandConfigBase
@@ -49,9 +48,8 @@ class RedditPreprocessorConfig(CommandConfigBase):
             Directory (either absolute or relative to 'experiment_dir') in which
             to store the capitalization frequency auxiliary output files.
 
-        cap_freq_file: (type: str, default: utils.pathing.CAP_FREQ_FILE)
-            Path (relative to 'cap_data_dir') of the capitalization frequency
-            auxiliary output file.
+        subreddits: (type: list, default: ["news"])
+            A string list of subreddits to preprocess.
 
         :param kwargs: optional configs to overwrite defaults (see above)
         """
@@ -61,7 +59,7 @@ class RedditPreprocessorConfig(CommandConfigBase):
         self.exist_data_dir = kwargs.pop('exist_data_dir', EXIST_DATA_DIR)
         self.existing_file = kwargs.pop('existing_file', EXISTING_FILE)
         self.cap_data_dir = kwargs.pop('cap_data_dir', CAP_DATA_DIR)
-        self.cap_freq_file = kwargs.pop('cap_freq_file', CAP_FREQ_FILE)
+        self.subreddits = kwargs.pop('subreddits', ["news"])
         super().__init__(**kwargs)
 
     def make_paths_absolute(self):
@@ -78,7 +76,6 @@ class RedditPreprocessorConfig(CommandConfigBase):
         self.exist_data_dir = paths.exist_data_dir
         self.existing_file = makepath(self.exist_data_dir, self.existing_file)
         self.cap_data_dir = paths.cap_data_dir
-        self.cap_freq_file = makepath(self.cap_data_dir, self.cap_freq_file)
         return self
 
 
@@ -92,19 +89,24 @@ class RedditPreprocessor:
         self.config = config
         self.nlp = spacy.load("en_core_web_sm")
         self.words = set(word.lower() for word in words.words())
-        self.cap_freq = {}  # Can't use defaultdict because we need to pickle.
+        self.cap_freq = None
         with open(self.config.existing_file, 'rb') as file:
             self.existing = pickle.load(file)
 
     def run(self) -> None:
         for root, _, files in os.walk(self.config.input_dir):
             for file in files:
-                df = pd.read_csv(makepath(root, file))
-                df['body'] = df['body'].map(self._clean)
-                path = makepath(self.config.output_dir, dm.to_cleaned(file))
-                df.to_csv(path, index=False, columns=list(df.axes[1]))
-        with open(self.config.cap_freq_file, 'wb') as file:
-            pickle.dump(self.cap_freq, file, protocol=pickle.HIGHEST_PROTOCOL)
+                if dm.parts(file)['subreddit'] in self.config.subreddits:
+                    self.cap_freq = {}  # Can't use defaultdict. Need to pickle.
+                    df = pd.read_csv(makepath(root, file))
+                    df['body'] = df['body'].map(self._clean)
+                    proc_path = makepath(self.config.output_dir, file)
+                    df.to_csv(proc_path, index=False, columns=list(df.axes[1]))
+                    cap_file = os.path.splitext(file)[0] + ".pickle"
+                    cap_path = makepath(self.config.cap_data_dir, cap_file)
+                    with open(cap_path, 'wb') as f:
+                        pickle.dump(
+                            self.cap_freq, f, protocol=pickle.HIGHEST_PROTOCOL)
 
     def _clean(self, body):
         kept = []

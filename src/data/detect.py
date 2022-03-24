@@ -1,4 +1,5 @@
 import pickle
+import os
 
 from utils.pathing import (
     makepath,
@@ -9,7 +10,6 @@ from utils.pathing import (
     CAP_DATA_DIR,
     NEO_DATA_DIR,
     USAGE_DICT_FILE,
-    CAP_FREQ_FILE,
     SURVIVING_FILE,
     DYING_FILE,
     EXISTING_FILE
@@ -46,10 +46,6 @@ class BasicDetectorConfig(CommandConfigBase):
             Directory (either absolute or relative to 'experiment_dir') from
             which to read the capitalization frequency auxiliary input file.
 
-        cap_freq_file: (type: str, default: utils.pathing.CAP_FREQ_FILE)
-            Path (relative to 'cap_data_dir') of the capitalization frequency
-            auxiliary input file.
-
         output_dir: (type: Path-like, default: utils.pathing.NEO_DATA_DIR)
             Directory (either absolute or relative to 'experiment_dir') in which
             to store all the output files.
@@ -82,7 +78,6 @@ class BasicDetectorConfig(CommandConfigBase):
         self.exist_data_dir = kwargs.pop('exist_data_dir', EXIST_DATA_DIR)
         self.existing_aux_file = kwargs.pop('existing_aux_file', EXISTING_FILE)
         self.cap_data_dir = kwargs.pop('cap_data_dir', CAP_DATA_DIR)
-        self.cap_freq_file = kwargs.pop('cap_freq_file', CAP_FREQ_FILE)
         self.output_dir = kwargs.pop('output_dir', NEO_DATA_DIR)
         self.surviving_file = kwargs.pop('surviving_file', SURVIVING_FILE)
         self.dying_file = kwargs.pop('dying_file', DYING_FILE)
@@ -107,7 +102,6 @@ class BasicDetectorConfig(CommandConfigBase):
         self.existing_aux_file = makepath(
             self.exist_data_dir, self.existing_aux_file)
         self.cap_data_dir = paths.cap_data_dir
-        self.cap_freq_file = makepath(self.cap_data_dir, self.cap_freq_file)
         self.output_dir = paths.neo_data_dir
         self.surviving_file = makepath(self.output_dir, self.surviving_file)
         self.dying_file = makepath(self.output_dir, self.dying_file)
@@ -131,8 +125,7 @@ class BasicDetector:
     def run(self) -> None:
         with open(self.config.usage_file, 'rb') as file:
             usage_dict = pickle.load(file)
-        with open(self.config.cap_freq_file, 'rb') as file:
-            cap_freq = pickle.load(file)
+        cap_freq = self._aggregate_cap_freqs()
         with open(self.config.existing_aux_file, 'rb') as file:
             existing_words = pickle.load(file)
 
@@ -159,6 +152,17 @@ class BasicDetector:
                         and cap_freq[word] > 0  # Not >=
                         and word in existing_words)
         self._save(existing, self.config.existing_output_file)
+
+    def _aggregate_cap_freqs(self):
+        cap_freq = {}
+        for root, _, files in os.walk(self.config.cap_data_dir):
+            for file in files:
+                with open(makepath(root, file), 'rb') as f:
+                    cap_freq_file = pickle.load(f)
+                for word, cap_freq_word in cap_freq_file.items():
+                    cap_freq.setdefault(word, 0)
+                    cap_freq[word] += cap_freq_word
+        return cap_freq
 
     @staticmethod
     def _save(words, filename):
