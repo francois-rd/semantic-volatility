@@ -1,6 +1,7 @@
 import argparse
 
 from commands import (
+    ExistingWordSamplerCommand,
     RedditDownloaderCommand,
     RedditPreprocessorCommand,
     WordUsageFinderCommand,
@@ -16,6 +17,8 @@ if __name__ == '__main__':
     subparsers = main_parser.add_subparsers(title="main subcommands")
 
     # Data gathering and cleaning commands.
+    ExistingWordSamplerCommand(subparsers.add_parser(
+        'sample-existing', help="randomly samples a number of existing words"))
     RedditDownloaderCommand(subparsers.add_parser(
         'download', help="download a portion of Reddit"))
     RedditPreprocessorCommand(subparsers.add_parser(

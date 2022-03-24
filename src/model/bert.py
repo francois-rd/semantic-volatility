@@ -16,6 +16,7 @@ from utils.pathing import (
     EMBEDDINGS_DIR,
     SURVIVING_FILE,
     DYING_FILE,
+    EXISTING_FILE,
     ID_MAP_FILE
 )
 from utils.data_management import make_file_row_map, from_cleaned
@@ -54,6 +55,10 @@ class BertConfig(CommandConfigBase):
             Path (relative to 'neo_data_dir') to the detected dying new words
             file.
 
+        existing_neo_file: (type: str, default: utils.pathing.EXISTING_FILE)
+            Path (relative to 'neo_data_dir') to the randomly-sampled existing
+            words file.
+
         usages_dir: (type: Path-like, default: utils.pathing.USAGES_DATA_DIR)
             Directory (either absolute or relative to 'experiment_dir') from
             which to read 'map_file'.
@@ -72,6 +77,10 @@ class BertConfig(CommandConfigBase):
 
         dying_output_file: (type: str, default: utils.pathing.DYING_FILE)
             Path (relative to 'output_dir') of the dying new word BERT
+            embeddings output file.
+
+        existing_output_file: (type: str, default: utils.pathing.EXISTING_FILE)
+            Path (relative to 'output_dir') of the existing words BERT
             embeddings output file.
 
         remove_urls: (type: bool, default: False)
@@ -94,12 +103,15 @@ class BertConfig(CommandConfigBase):
         self.surviving_neo_file = kwargs.pop(
             'surviving_neo_file', SURVIVING_FILE)
         self.dying_neo_file = kwargs.pop('dying_neo_file', DYING_FILE)
+        self.existing_neo_file = kwargs.pop('existing_neo_file', EXISTING_FILE)
         self.usages_dir = kwargs.pop('usages_dir', USAGES_DATA_DIR)
         self.map_file = kwargs.pop('map_file', ID_MAP_FILE)
         self.output_dir = kwargs.pop('output_dir', EMBEDDINGS_DIR)
         self.surviving_output_file = kwargs.pop(
             'surviving_output_file', SURVIVING_FILE)
         self.dying_output_file = kwargs.pop('dying_output_file', DYING_FILE)
+        self.existing_output_file = kwargs.pop(
+            'existing_output_file', EXISTING_FILE)
         self.remove_urls = kwargs.pop('remove_urls', False)
 
         self.token_aggregator = kwargs.pop('token_aggregator', DEFAULT_TOK_AGG)
@@ -130,6 +142,8 @@ class BertConfig(CommandConfigBase):
         self.surviving_neo_file = makepath(
             self.neo_data_dir, self.surviving_neo_file)
         self.dying_neo_file = makepath(self.neo_data_dir, self.dying_neo_file)
+        self.existing_neo_file = makepath(
+            self.neo_data_dir, self.existing_neo_file)
         self.usages_dir = paths.usages_data_dir
         self.map_file = makepath(self.usages_dir, self.map_file)
         self.output_dir = paths.embeddings_dir
@@ -137,6 +151,8 @@ class BertConfig(CommandConfigBase):
             self.output_dir, self.surviving_output_file)
         self.dying_output_file = makepath(
             self.output_dir, self.dying_output_file)
+        self.existing_output_file = makepath(
+            self.output_dir, self.existing_output_file)
         return self
 
 
@@ -169,6 +185,7 @@ class Bert:
         config = self.config
         self._do_run(config.surviving_neo_file, config.surviving_output_file)
         self._do_run(config.dying_neo_file, config.dying_output_file)
+        self._do_run(config.existing_neo_file, config.existing_output_file)
 
     def _do_run(self, input_path, output_path):
         file_row_map = make_file_row_map(input_path, self.config.map_file)

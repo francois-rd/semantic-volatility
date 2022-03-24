@@ -11,8 +11,10 @@ from utils.pathing import (
     EXPERIMENT_DIR,
     RAW_DATA_DIR,
     PREPROC_DATA_DIR,
-    USAGES_DATA_DIR,
-    CAP_FREQ_FILE
+    EXIST_DATA_DIR,
+    CAP_DATA_DIR,
+    CAP_FREQ_FILE,
+    EXISTING_FILE
 )
 from utils.config import CommandConfigBase
 import utils.data_management as dm
@@ -35,20 +37,30 @@ class RedditPreprocessorConfig(CommandConfigBase):
             Directory (either absolute or relative to 'experiment_dir') in which
             to store all the preprocessing output files.
 
-        usage_dir: (type: Path-like, default: utils.pathing.USAGES_DATA_DIR)
+        exist_data_dir: (type: Path-like, default: utils.pathing.EXIST_DATA_DIR)
+            Directory (either absolute or relative to 'experiment_dir') from
+            which to read the existing words sample auxiliary input file.
+
+        existing_file: (type: str, default: utils.pathing.EXISTING_FILE)
+            Path (relative to 'exist_data_dir') of the randomly-sampled existing
+            words auxiliary input file.
+
+        cap_data_dir: (type: Path-like, default: utils.pathing.CAP_DATA_DIR)
             Directory (either absolute or relative to 'experiment_dir') in which
-            to store the capitalization frequency output file.
+            to store the capitalization frequency auxiliary output files.
 
         cap_freq_file: (type: str, default: utils.pathing.CAP_FREQ_FILE)
-            Path (relative to 'usage_dir') of the capitalization frequency
-            output file.
+            Path (relative to 'cap_data_dir') of the capitalization frequency
+            auxiliary output file.
 
         :param kwargs: optional configs to overwrite defaults (see above)
         """
         self.experiment_dir = kwargs.pop('experiment_dir', EXPERIMENT_DIR)
         self.input_dir = kwargs.pop('input_dir', RAW_DATA_DIR)
         self.output_dir = kwargs.pop('output_dir', PREPROC_DATA_DIR)
-        self.usage_dir = kwargs.pop('usage_dir', USAGES_DATA_DIR)
+        self.exist_data_dir = kwargs.pop('exist_data_dir', EXIST_DATA_DIR)
+        self.existing_file = kwargs.pop('existing_file', EXISTING_FILE)
+        self.cap_data_dir = kwargs.pop('cap_data_dir', CAP_DATA_DIR)
         self.cap_freq_file = kwargs.pop('cap_freq_file', CAP_FREQ_FILE)
         super().__init__(**kwargs)
 
@@ -57,13 +69,16 @@ class RedditPreprocessorConfig(CommandConfigBase):
             experiment_dir=self.experiment_dir,
             raw_data_dir=self.input_dir,
             preproc_data_dir=self.output_dir,
-            usages_data_dir=self.usage_dir
+            exist_data_dir=self.exist_data_dir,
+            cap_data_dir=self.cap_data_dir
         )
         self.experiment_dir = paths.experiment_dir
         self.input_dir = paths.raw_data_dir
         self.output_dir = paths.preproc_data_dir
-        self.usage_dir = paths.usages_data_dir
-        self.cap_freq_file = makepath(self.usage_dir, self.cap_freq_file)
+        self.exist_data_dir = paths.exist_data_dir
+        self.existing_file = makepath(self.exist_data_dir, self.existing_file)
+        self.cap_data_dir = paths.cap_data_dir
+        self.cap_freq_file = makepath(self.cap_data_dir, self.cap_freq_file)
         return self
 
 
@@ -78,6 +93,8 @@ class RedditPreprocessor:
         self.nlp = spacy.load("en_core_web_sm")
         self.words = set(word.lower() for word in words.words())
         self.cap_freq = {}  # Can't use defaultdict because we need to pickle.
+        with open(self.config.existing_file, 'rb') as file:
+            self.existing = pickle.load(file)
 
     def run(self) -> None:
         for root, _, files in os.walk(self.config.input_dir):
@@ -93,7 +110,8 @@ class RedditPreprocessor:
         kept = []
         for token in self.nlp(body):
             if token.is_alpha and not token.is_stop:
-                if token.lemma_ not in self.words:
+                lemma = token.lemma_
+                if lemma not in self.words or lemma in self.existing:
                     value = -1 if token.shape_.startswith("Xx") else 1
                     self.cap_freq.setdefault(token.lower_, 0)
                     self.cap_freq[token.lower_] += value

@@ -12,7 +12,8 @@ from utils.pathing import (
     TIME_SERIES_DIR,
     PLOT_TS_DIR,
     SURVIVING_FILE,
-    DYING_FILE
+    DYING_FILE,
+    EXISTING_FILE
 )
 from utils.timeline import TimelineConfig, Timeline
 from model.time_series import TimeSeriesTypes
@@ -40,6 +41,10 @@ class PlotTimeSeriesConfig(CommandConfigBase):
             Path (relative to 'input_dir') of the dying new word time series
             file.
 
+        existing_file: (type: str, default: utils.pathing.EXISTING_FILE)
+            Path (relative to 'input_dir') of the existing word time series
+            file.
+
         output_dir: (type: Path-like, default: utils.pathing.PLOT_TS_DIR)
             Directory (either absolute or relative to 'experiment_dir') in which
             to store all the output files.
@@ -57,6 +62,7 @@ class PlotTimeSeriesConfig(CommandConfigBase):
         self.input_dir = kwargs.pop('input_dir', TIME_SERIES_DIR)
         self.surviving_file = kwargs.pop('surviving_file', SURVIVING_FILE)
         self.dying_file = kwargs.pop('dying_file', DYING_FILE)
+        self.existing_file = kwargs.pop('existing_file', EXISTING_FILE)
         self.output_dir = kwargs.pop('output_dir', PLOT_TS_DIR)
         self.num_anecdotes = kwargs.pop('num_anecdotes', 5)
         self.timeline_config = kwargs.pop('timeline_config', {})
@@ -72,6 +78,7 @@ class PlotTimeSeriesConfig(CommandConfigBase):
         self.input_dir = paths.time_series_dir
         self.surviving_file = makepath(self.input_dir, self.surviving_file)
         self.dying_file = makepath(self.input_dir, self.dying_file)
+        self.existing_file = makepath(self.input_dir, self.existing_file)
         self.output_dir = paths.plot_ts_dir
         return self
 
@@ -98,7 +105,9 @@ class PlotTimeSeries:
             with plt.style.context(style):
                 surv = self._do_run("Surviving", self.config.surviving_file)
                 #dying = self._do_run("Dying", self.config.dying_file)
-                #self._plot(surv, dying)
+                existing = self._do_run("Existing", self.config.existing_file)
+                #self._plot(surv, dying, existing)
+                self._plot(surv, existing)
 
     def _do_run(self, word_type, input_path):
         with open(input_path, 'rb') as file:

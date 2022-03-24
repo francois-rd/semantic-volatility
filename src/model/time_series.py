@@ -10,7 +10,8 @@ from utils.pathing import (
     EMBEDDINGS_DIR,
     TIME_SERIES_DIR,
     SURVIVING_FILE,
-    DYING_FILE
+    DYING_FILE,
+    EXISTING_FILE
 )
 from utils.timeline import TimelineConfig, Timeline
 from utils.config import CommandConfigBase
@@ -65,6 +66,9 @@ class TimeSeriesConfig(CommandConfigBase):
             Path (relative to 'input_dir') of the dying new word embeddings
             file.
 
+        existing_input_file: (type: str, default: utils.pathing.EXISTING_FILE)
+            Path (relative to 'input_dir') of the existing word embeddings file.
+
         output_dir: (type: Path-like, default: utils.pathing.TIME_SERIES_DIR)
             Directory (either absolute or relative to 'experiment_dir') in which
             to store all the output files.
@@ -76,6 +80,10 @@ class TimeSeriesConfig(CommandConfigBase):
 
         dying_output_file: (type: str, default: utils.pathing.DYING_FILE)
             Path (relative to 'output_dir') of the dying new word time series
+            output file.
+
+        existing_output_file: (type: str, default: utils.pathing.EXISTING_FILE)
+            Path (relative to 'input_dir') of the existing word time series
             output file.
 
         shuffle_option: (type: str, default: 'same_slices')
@@ -99,10 +107,14 @@ class TimeSeriesConfig(CommandConfigBase):
         self.surviving_input_file = kwargs.pop(
             'surviving_input_file', SURVIVING_FILE)
         self.dying_input_file = kwargs.pop('dying_input_file', DYING_FILE)
+        self.existing_input_file = kwargs.pop(
+            'existing_input_file', EXISTING_FILE)
         self.output_dir = kwargs.pop('output_dir', TIME_SERIES_DIR)
         self.surviving_output_file = kwargs.pop(
             'surviving_output_file', SURVIVING_FILE)
         self.dying_output_file = kwargs.pop('dying_output_file', DYING_FILE)
+        self.existing_output_file = kwargs.pop(
+            'existing_output_file', EXISTING_FILE)
         self.shuffle_option = kwargs.pop(
             'shuffle_option', ShuffleOptions.SAME_SLICES)
         self.timeline_config = kwargs.pop('timeline_config', {})
@@ -119,11 +131,15 @@ class TimeSeriesConfig(CommandConfigBase):
         self.surviving_input_file = makepath(
             self.input_dir, self.surviving_input_file)
         self.dying_input_file = makepath(self.input_dir, self.dying_input_file)
+        self.existing_input_file = makepath(
+            self.input_dir, self.existing_input_file)
         self.output_dir = paths.time_series_dir
         self.surviving_output_file = makepath(
             self.output_dir, self.surviving_output_file)
         self.dying_output_file = makepath(
             self.output_dir, self.dying_output_file)
+        self.existing_output_file = makepath(
+            self.output_dir, self.existing_output_file)
         return self
 
 
@@ -148,6 +164,7 @@ class TimeSeries:
         config = self.config
         self._do_run(config.surviving_input_file, config.surviving_output_file)
         self._do_run(config.dying_input_file, config.dying_output_file)
+        self._do_run(config.existing_input_file, config.existing_output_file)
 
     def _do_run(self, input_path, output_path):
         with open(input_path, 'rb') as file:
