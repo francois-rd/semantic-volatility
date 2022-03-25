@@ -1,5 +1,6 @@
 from nltk.corpus import words
 import pandas as pd
+import logging
 import pickle
 import spacy
 import os
@@ -109,6 +110,9 @@ class RedditPreprocessor:
                             self.cap_freq, f, protocol=pickle.HIGHEST_PROTOCOL)
 
     def _clean(self, body):
+        if isinstance(body, float):
+            logging.warning(f"Body is float: '{body}'. Treating as NaN.")
+            return float('NaN')
         kept = []
         for token in self.nlp(body):
             if token.is_alpha and not token.is_stop:
