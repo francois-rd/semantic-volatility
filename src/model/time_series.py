@@ -188,8 +188,9 @@ class TimeSeries:
     def _time_slices(self, word_embs):
         time_slices = {}
         for emb, timestamp in word_embs:
-            time_slice = self.timeline.slice_of(timestamp)
-            time_slices.setdefault(time_slice, []).append(emb)
+            if not self.timeline.is_early(timestamp):  # Prunes existing.
+                time_slice = self.timeline.slice_of(timestamp)
+                time_slices.setdefault(time_slice, []).append(emb)
         return time_slices
 
     def _shuffle(self, word_embs, time_slices):
