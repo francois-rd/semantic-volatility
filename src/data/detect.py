@@ -1,3 +1,4 @@
+import logging
 import pickle
 import os
 
@@ -126,6 +127,7 @@ class BasicDetector:
         with open(self.config.usage_file, 'rb') as file:
             usage_dict = pickle.load(file)
         cap_freq = self._aggregate_cap_freqs()
+        cap_freq = self._fix_cap_freq(cap_freq)
         with open(self.config.existing_aux_file, 'rb') as file:
             existing_words = pickle.load(file)
 
@@ -167,4 +169,28 @@ class BasicDetector:
     @staticmethod
     def _save(words, filename):
         with open(filename, 'wb') as file:
+            logging.debug(f"{os.path.split(filename)[1]}: {list(words.keys())}")
             pickle.dump(words, file, protocol=pickle.HIGHEST_PROTOCOL)
+
+    @staticmethod
+    def _fix_cap_freq(cap_freq):
+        # NOTE: There's a bug in preprocess.py where the cap_freq data is stored
+        # using raw words, whereas the preprocessor then goes on to "collapse
+        # repeating letters to a maximum of 3." This means that some keys in
+        # cap_freq don't match keys in the usage_dict. Thankfully, these
+        # telescoping words are very rare, so it won't affect any final results
+        # in any meaningful way, but it still needs to be addressed to prevent
+        # runtime KeyErrors.
+        # NOTE: The reason for addressing it here and not in preprocess.py is
+        # that the later takes multiple wall clock days to run, and has already
+        # been run for the main experiment by the time the bug was discovered
+        # (with not enough time before the deadline to rerun it), whereas this
+        # detector takes almost no time to run by comparison.
+        import re
+
+        fixed_cap_freq = {}
+        for word, cap_freq_word in cap_freq.items():
+            collapsed_word = re.sub(r'(.)\1\1+', r'\1\1\1', word)
+            fixed_cap_freq.setdefault(collapsed_word, 0)
+            fixed_cap_freq[collapsed_word] += cap_freq_word
+        return fixed_cap_freq
