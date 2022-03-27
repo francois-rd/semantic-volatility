@@ -136,7 +136,8 @@ class BasicDetector:
                           if not self.timeline.is_early(usage[0])
                           and len(usage[2]) >= self.config.min_usage_cutoff
                           and cap_freq[word] > 0  # Not >=
-                          and word not in existing_words)
+                          and word not in existing_words
+                          and self._is_ascii(word))
 
         # Split surviving vs dying new words.
         surviving, dying = {}, {}
