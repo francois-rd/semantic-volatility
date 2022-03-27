@@ -152,7 +152,8 @@ class BasicDetector:
         existing = dict((word, usage) for word, usage in usage_dict.items()
                         if len(usage[2]) >= self.config.min_usage_cutoff
                         and cap_freq[word] > 0  # Not >=
-                        and word in existing_words)
+                        and word in existing_words
+                        and self._is_ascii(word))
         self._save(existing, self.config.existing_output_file)
 
     def _aggregate_cap_freqs(self):
@@ -165,6 +166,15 @@ class BasicDetector:
                     cap_freq.setdefault(word, 0)
                     cap_freq[word] += cap_freq_word
         return cap_freq
+
+    @staticmethod
+    def _is_ascii(word):
+        try:
+            word.encode('ascii')
+            return True
+        except UnicodeEncodeError:
+            logging.debug(f"Removed non-ASCII word: {word}")
+            return False
 
     @staticmethod
     def _save(words, filename):
