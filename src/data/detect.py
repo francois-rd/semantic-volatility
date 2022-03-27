@@ -170,16 +170,6 @@ class BasicDetector:
 
     @staticmethod
     def _is_ascii(word):
-        # For some reason, just checking "word.encode('ascii')" is not working.
-        if any(ord(c) >= 128 for c in word):
-            logging.debug(f"Word '{word}' has ord >= 128.")
-            return False
-        if any(c.isdigit() for c in word):
-            logging.debug(f"Word '{word}' has digit.")
-            return False
-        if '\\' in word:
-            logging.debug(f"Word '{word}' has contains backslash.")
-            return False
         try:
             word.encode('ascii')
             return True
