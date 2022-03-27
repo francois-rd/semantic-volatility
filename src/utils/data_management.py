@@ -63,7 +63,7 @@ class RowFileMapper:
         return mapper
 
     def reverse(self, row_id):
-        for file_id in reversed(self.id_map.keys()):  # Dicts ordered in Py>3.6
+        for file_id in reversed(list(self.id_map.keys())):  # Dict ordered Py3.7
             if file_id <= row_id:
                 return self.id_map[file_id], row_id - file_id
 
