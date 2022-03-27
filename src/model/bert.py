@@ -192,6 +192,7 @@ class Bert:
         embs = {}  # Can't use defaultdict because we need to pickle after.
         for file, row_map in file_row_map.items():
             self._process_file(file, row_map, embs)
+            logging.debug(f"Finished processing '{file}'")
         with open(output_path, 'wb') as file:
             pickle.dump(embs, file, protocol=pickle.HIGHEST_PROTOCOL)
 
