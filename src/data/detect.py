@@ -180,7 +180,10 @@ class BasicDetector:
     @staticmethod
     def _save(words, filename):
         with open(filename, 'wb') as file:
-            logging.debug(f"{os.path.split(filename)[1]}: {list(words.keys())}")
+            counts_by_word = {w: len(usage[2]) for w, usage in words.items()}
+            logging.debug(f"{os.path.split(filename)[1]}: {counts_by_word}")
+            total_count = sum(counts_by_word.values())
+            logging.debug(f"{os.path.split(filename)[1]}: {total_count}")
             pickle.dump(words, file, protocol=pickle.HIGHEST_PROTOCOL)
 
     @staticmethod
