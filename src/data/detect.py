@@ -67,6 +67,11 @@ class BasicDetectorConfig(CommandConfigBase):
             The minimum number of occurrences of a word to be considered valid.
             Words occurring less often are considered noise.
 
+        max_usage_cutoff_existing: (type: int, default: 10,000)
+            The maximum number of occurrences of an EXISTING word to be
+            considered valid. Existing words occurring more add a lot of
+            computational overhead without providing much statistical benefit.
+
         timeline_config: (type: dict, default: {})
             Timeline configurations to use. Any given parameters override the
             defaults. See utils.timeline.TimelineConfig for details.
@@ -85,6 +90,8 @@ class BasicDetectorConfig(CommandConfigBase):
         self.existing_output_file = kwargs.pop(
             'existing_output_file', EXISTING_FILE)
         self.min_usage_cutoff = kwargs.pop('min_usage_cutoff', 1)
+        self.max_usage_cutoff_existing = kwargs.pop(
+            'max_usage_cutoff_existing', 10000)
         self.timeline_config = kwargs.pop('timeline_config', {})
         super().__init__(**kwargs)
 
@@ -132,9 +139,10 @@ class BasicDetector:
             existing_words = pickle.load(file)
 
         # Detect new words.
+        min_cutoff = self.config.min_usage_cutoff
         neologisms = dict((word, usage) for word, usage in usage_dict.items()
                           if not self.timeline.is_early(usage[0])
-                          and len(usage[2]) >= self.config.min_usage_cutoff
+                          and min_cutoff <= len(usage[2])
                           and cap_freq[word] > 0  # Not >=
                           and word not in existing_words
                           and self._is_ascii(word))
@@ -150,8 +158,9 @@ class BasicDetector:
         self._save(dying, self.config.dying_file)
 
         # Store usages for randomly-sampled existing words.
+        max_cutoff = self.config.max_usage_cutoff_existing
         existing = dict((word, usage) for word, usage in usage_dict.items()
-                        if len(usage[2]) >= self.config.min_usage_cutoff
+                        if min_cutoff <= len(usage[2]) <= max_cutoff
                         and cap_freq[word] > 0  # Not >=
                         and word in existing_words
                         and self._is_ascii(word))
