@@ -212,6 +212,8 @@ class Bert:
             emb = self._embed(body)
             agg_emb = self._filter_and_aggregate_word_piece_emb(emb, slices)
             for word, word_agg_emb in zip(word_list, agg_emb):
+                if word_agg_emb is None:
+                    continue
                 embs.setdefault(word, []).append((word_agg_emb, created_utc))
 
     def _find_word_piece_token_slices(self, body, word_list):
@@ -238,6 +240,37 @@ class Bert:
                 # valid. We check these JIT.
                 consecutive_check = start_index
                 for end_idx_idx in range(start_idx_idx + 1, len(indices)):
+                    # TODO: This part causes an off-by-one error if two words
+                    #  are consecutive and the second word is in wordlist before
+                    #  the first. Test example:
+                    #    body = "I hope the plandemic scamdemic ends soon"
+                    #    wordlist = ['scamdemic', 'plandemic']
+                    #  Solution is not obvious. If we leave extra indices in,
+                    #  then we might get multi-matches on the same spot for
+                    #  single-word tokens. On top of that, it's not clear what
+                    #  happens if we have three+ consecutive words in particular
+                    #  orders. One approach is in the partial match below, we
+                    #  can lookahead one extra position. But then it's not clear
+                    #  how to record the 'add' and 'delete' correctly. There's
+                    #  also an increased chance of missing even more corner
+                    #  cases (eg. end of string) and accidental greedy matching.
+                    #  So, an alternative solution (since these are rare events)
+                    #  is to skip these cases to prevent further off-by-one
+                    #  errors or corner cases later (including in other  files).
+
+                    # TODO: Another issue is that telescoping words won't match.
+                    #  This is impossible to fix: if we match the word against
+                    #  a collapsed version of the string, we will not go far
+                    #  enough (early stopping) if the end of the word is where
+                    #  the repeat is. We might also get other strange false
+                    #  matches. The real solution is to discount telescoping
+                    #  words in preprocess. But it's too late for that at this
+                    #  stage (the preprocessor takes too long to run).
+
+                    # TODO: In both cases above, the solutions are difficult and
+                    #  error prone, and therefore time consuming. So, we will
+                    #  just implement the 'ignore' method instead and log the
+                    #  ignoring in the log file for later inspection.
                     end_index = indices[end_idx_idx]
                     # Only continue if consecutive.
                     if consecutive_check + 1 == end_index:
@@ -272,7 +305,7 @@ class Bert:
                 # No match was found for the current word. Problem!
                 logging.error(f"Cannot construct word '{word}' from tokens: "
                               f"'{tokens}'")
-                slices.append(slice(-1, -1))
+                slices.append(None)
         return slices
 
     def _embed(self, body):
@@ -328,5 +361,9 @@ class Bert:
         agg_emb = []
         with torch.no_grad():
             for slice_ in slices:
-                agg_emb.append(self.token_aggregator_fn(emb[slice_, :].numpy()))
+                if slice_ is None:
+                    agg = None
+                else:
+                    agg = self.token_aggregator_fn(emb[slice_, :].numpy())
+                agg_emb.append(agg)
             return agg_emb
