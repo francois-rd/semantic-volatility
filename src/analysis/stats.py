@@ -121,7 +121,6 @@ class PlotStats:
             n_rows = (len(args) * 2 + n_combs)
             n_cols = self.max_time_slice + ts_type['offset'] - 1
             self.n_tests += n_rows * n_cols
-        print(self.n_tests)
         for ts_type in TimeSeriesTypes.ALL_TYPES:
             self._table(ts_type, *args)
         styles = ['seaborn-colorblind', 'seaborn-deep', 'dark_background']
@@ -145,9 +144,9 @@ class PlotStats:
             for time_series_for_word in all_time_series_by_word.values():
                 for ts_type in TimeSeriesTypes.ALL_TYPES:
                     for id_ in ['main', 'control']:
-                        ts = time_series_for_word[ts_type[f'{id_}_id']]
-                        if len(ts) > self.max_time_slice + ts_type[f'offset']:
-                            del ts[-1]
+                        t = time_series_for_word[ts_type[f'{id_}_id']]
+                        if len(t) > self.max_time_slice + ts_type['offset'] + 1:
+                            del t[-1]
 
     def _spearman(self, all_time_series_by_word):
         rhos, swapped = {}, self._swap_keys(all_time_series_by_word)
@@ -193,7 +192,7 @@ class PlotStats:
         return swapped
 
     def _finalize_plot(self, *, ylabel, title, filename, offset):
-        plt.xticks(np.arange(1, self.max_time_slice + offset))
+        plt.xticks(np.arange(1, self.max_time_slice + offset + 1))
         if self.config.major_x_ticks > 0:
             ax = plt.gca().xaxis
             ax.set_major_locator(MultipleLocator(self.config.major_x_ticks))
@@ -245,14 +244,14 @@ class PlotStats:
         # Compare each pair of word types' main stats to each other.
         args_dict = {k[0]: v for k, v in args}
         for a, b in list(itertools.combinations(index, 2)):
-            all_index.append(("Pairwise", f"{a} - {b}"))
+            all_index.append(("Pair", f"{a} - {b}"))
             self._ttest(args_dict[a][ts_type['main_id']], offset, data,
                         second_stats_ts=args_dict[b][ts_type['main_id']])
 
         # Save table.
         filename = f"{ts_type['main_short_name']}.txt"
         cols = [(f"Time Index ({self.slice_size}s since first appearance)",
-                 str(i)) for i in range(1, self.max_time_slice + offset)]
+                 str(i)) for i in range(1, self.max_time_slice + offset + 1)]
         all_index = pd.MultiIndex.from_tuples(all_index)
         cols = pd.MultiIndex.from_tuples(cols)
         df = pd.DataFrame(data, index=all_index, columns=cols)
@@ -275,7 +274,7 @@ class PlotStats:
             else:
                 star = ""
             row_data.append(f"{m1 - m2:.2f}{star}")
-        padding = self.max_time_slice - len(row_data) + offset - 1
+        padding = self.max_time_slice - len(row_data) + offset
         row_data.extend(["-"] * padding)
         data.append(row_data)
 
@@ -290,7 +289,7 @@ class PlotStats:
             lambda v: "textbf:--rwrap;"
         ).to_latex(
             buf=makepath(self.config.output_dir, filename),
-            column_format="cc|" + "d{2.5}" * (self.max_time_slice + offset - 1),
+            column_format="cc|" + "d{2.5}" * (self.max_time_slice + offset),
             position="h",
             position_float="centering",
             hrules=True,

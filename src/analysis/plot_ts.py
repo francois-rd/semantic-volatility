@@ -115,10 +115,9 @@ class PlotTimeSeries:
             self.style = style   # Can't get this programmatically from context.
             with plt.style.context(style):
                 surv = self._do_run("Surviving", self.config.surviving_file)
-                #dying = self._do_run("Dying", self.config.dying_file)
+                dying = self._do_run("Dying", self.config.dying_file)
                 existing = self._do_run("Existing", self.config.existing_file)
-                #self._plot(surv, dying, existing)
-                self._plot(surv, existing)
+                self._plot(surv, dying, existing)
 
     def _do_run(self, word_type, input_path):
         with open(input_path, 'rb') as file:
@@ -134,9 +133,9 @@ class PlotTimeSeries:
             for time_series_for_word in all_time_series_by_word.values():
                 for ts_type in TimeSeriesTypes.ALL_TYPES:
                     for id_ in ['main', 'control']:
-                        ts = time_series_for_word[ts_type[f'{id_}_id']]
-                        if len(ts) > self.max_time_slice + ts_type[f'offset']:
-                            del ts[-1]
+                        t = time_series_for_word[ts_type[f'{id_}_id']]
+                        if len(t) > self.max_time_slice + ts_type['offset'] + 1:
+                            del t[-1]
 
     def _plot_anecdotes(self, word_type, all_time_series_by_word):
         anecdotes = {k: all_time_series_by_word[k] for k in random.sample(
@@ -194,7 +193,7 @@ class PlotTimeSeries:
         return swapped
 
     def _finalize_plot(self, *, yticks, ylabel, title, filename, offset):
-        plt.xticks(np.arange(self.max_time_slice + offset))
+        plt.xticks(np.arange(self.max_time_slice + offset + 1))
         if self.config.major_x_ticks > 0:
             ax = plt.gca().xaxis
             ax.set_major_locator(MultipleLocator(self.config.major_x_ticks))
