@@ -28,20 +28,21 @@ class ShuffleOptions:
         return [attr[k] for k in attr.keys() if not k.startswith('__')]
 
 
-def define_ts_type(initialism, full_name):
+def define_ts_type(initialism, full_name, offset):
     return {
+        'offset': offset,  # Number of dropped time slices.
         'main_id': initialism.lower(),
         'control_id': initialism.lower() + '_control',
         'main_full_name': f"{full_name} ({initialism})",
         'control_full_name': f"{initialism} Control",
         'main_short_name': initialism,
-        'control_short_name': f"{initialism}(C)"
+        'control_short_name': f"{initialism}(C)",
     }
 
 
 class TimeSeriesTypes:
-    APCD = define_ts_type("APCD", "Average Pairwise Cosine Distance")
-    CCD = define_ts_type("CCD", "Consecutive Cosine Distance")
+    APCD = define_ts_type("APCD", "Average Pairwise Cosine Distance", 0)
+    CCD = define_ts_type("CCD", "Consecutive Cosine Distance", -1)
     ALL_TYPES = [APCD, CCD]
 
 

@@ -132,9 +132,11 @@ class PlotTimeSeries:
     def _maybe_drop_last(self, all_time_series_by_word):
         if self.config.drop_last:
             for time_series_for_word in all_time_series_by_word.values():
-                for time_series in time_series_for_word.values():
-                    if len(time_series) > self.max_time_slice:
-                        del time_series[-1]
+                for ts_type in TimeSeriesTypes.ALL_TYPES:
+                    for id_ in ['main', 'control']:
+                        ts = time_series_for_word[ts_type[f'{id_}_id']]
+                        if len(ts) > self.max_time_slice + ts_type[f'offset']:
+                            del ts[-1]
 
     def _plot_anecdotes(self, word_type, all_time_series_by_word):
         anecdotes = {k: all_time_series_by_word[k] for k in random.sample(
@@ -163,7 +165,8 @@ class PlotTimeSeries:
                 ylabel=ylabel,
                 title=f"{ts_type_name} Time Series for Randomly-Selected "
                       f"{word_type} Words",
-                filename=filename + "all.pdf"
+                filename=filename + "all.pdf",
+                offset=ts_type['offset']
             )
 
             # Each time series in its own graph.
@@ -178,7 +181,8 @@ class PlotTimeSeries:
                     ylabel=ylabel,
                     title=f"{ts_type_name} Time Series for '{word}' "
                           f"({word_type})",
-                    filename=filename + f"{word}.pdf"
+                    filename=filename + f"{word}.pdf",
+                    offset=ts_type['offset']
                 )
 
     @staticmethod
@@ -189,8 +193,8 @@ class PlotTimeSeries:
                 swapped.setdefault(time_series_name, []).append(time_series)
         return swapped
 
-    def _finalize_plot(self, *, yticks, ylabel, title, filename):
-        plt.xticks(np.arange(self.max_time_slice + 1))
+    def _finalize_plot(self, *, yticks, ylabel, title, filename, offset):
+        plt.xticks(np.arange(self.max_time_slice + offset))
         if self.config.major_x_ticks > 0:
             ax = plt.gca().xaxis
             ax.set_major_locator(MultipleLocator(self.config.major_x_ticks))
@@ -238,5 +242,5 @@ class PlotTimeSeries:
                                      color=color, alpha=0.2)
                     poly1d_fn = np.poly1d(np.polyfit(x, means, 1))
                     plt.plot(x, poly1d_fn(x), color=color, linestyle='dashed')
-            self._finalize_plot(yticks=yticks, ylabel=ylabel,
-                                title=title, filename=filename)
+            self._finalize_plot(yticks=yticks, ylabel=ylabel, title=title,
+                                filename=filename, offset=ts_type['offset'])
