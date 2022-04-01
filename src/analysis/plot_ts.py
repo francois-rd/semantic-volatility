@@ -52,6 +52,13 @@ class PlotTimeSeriesConfig(CommandConfigBase):
         num_anecdotes: (type: int, default: 5)
             Number of anecdotal words to randomly sample for plotting.
 
+        drop_last: (type: bool, default: True)
+            Whether to drop the last time slice or not.
+
+        major_x_ticks: (type: int, default: 0)
+            If positive, the value to set for the major xticks in matplotlib.
+            Otherwise, leave xticks to the default layout.
+
         timeline_config: (type: dict, default: {})
             Timeline configurations to use. Any given parameters override the
             defaults. See utils.timeline.TimelineConfig for details.
@@ -65,6 +72,8 @@ class PlotTimeSeriesConfig(CommandConfigBase):
         self.existing_file = kwargs.pop('existing_file', EXISTING_FILE)
         self.output_dir = kwargs.pop('output_dir', PLOT_TS_DIR)
         self.num_anecdotes = kwargs.pop('num_anecdotes', 5)
+        self.drop_last = kwargs.pop('drop_last', True)
+        self.major_x_ticks = kwargs.pop('major_x_ticks', 0)
         self.timeline_config = kwargs.pop('timeline_config', {})
         super().__init__(**kwargs)
 
@@ -95,6 +104,8 @@ class PlotTimeSeries:
         tl_config = TimelineConfig(**self.config.timeline_config)
         self.max_time_slice = Timeline(tl_config).slice_of(tl_config.end)
         self.max_time_slice -= tl_config.early
+        if config.drop_last:
+            self.max_time_slice -= 1
         self.slice_size = tl_config.slice_size
         self.style = None
 
@@ -112,10 +123,18 @@ class PlotTimeSeries:
     def _do_run(self, word_type, input_path):
         with open(input_path, 'rb') as file:
             all_time_series_by_word = pickle.load(file)
+        self._maybe_drop_last(all_time_series_by_word)
         self._plot_anecdotes(word_type, all_time_series_by_word)
         with_word_type = word_type, self._swap_keys(all_time_series_by_word)
         self._plot(with_word_type)
         return with_word_type
+
+    def _maybe_drop_last(self, all_time_series_by_word):
+        if self.config.drop_last:
+            for time_series_for_word in all_time_series_by_word.values():
+                for time_series in time_series_for_word.values():
+                    if len(time_series) > self.max_time_slice:
+                        del time_series[-1]
 
     def _plot_anecdotes(self, word_type, all_time_series_by_word):
         anecdotes = {k: all_time_series_by_word[k] for k in random.sample(
@@ -172,8 +191,10 @@ class PlotTimeSeries:
 
     def _finalize_plot(self, *, yticks, ylabel, title, filename):
         plt.xticks(np.arange(self.max_time_slice + 1))
-        plt.gca().xaxis.set_major_locator(MultipleLocator(5))
-        plt.gca().xaxis.set_minor_locator(MultipleLocator(1))
+        if self.config.major_x_ticks > 0:
+            ax = plt.gca().xaxis
+            ax.set_major_locator(MultipleLocator(self.config.major_x_ticks))
+            ax.set_minor_locator(MultipleLocator(1))
         plt.yticks(yticks)
         plt.xlabel(f"Time Index ({self.slice_size}s since first appearance)")
         plt.ylabel(ylabel)
