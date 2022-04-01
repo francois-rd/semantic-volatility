@@ -8,7 +8,8 @@ from commands import (
     BasicDetectorCommand,
     BertCommand,
     TimeSeriesCommand,
-    PlotTimeSeriesCommand
+    PlotTimeSeriesCommand,
+    PlotStatsCommand
 )
 
 if __name__ == '__main__':
@@ -39,6 +40,8 @@ if __name__ == '__main__':
     # Analysis commands.
     PlotTimeSeriesCommand(subparsers.add_parser(
         'plot-ts', help='plot the multiple resulting time series'))
+    PlotStatsCommand(subparsers.add_parser(
+        'plot-stats', help='compute and plot stats from the time series'))
 
     args = main_parser.parse_args()
     args.func(args)
