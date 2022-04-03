@@ -41,9 +41,9 @@ def define_ts_type(initialism, full_name, offset):
 
 
 class TimeSeriesTypes:
-    APCD = define_ts_type("APCD", "Average Pairwise Cosine Distance", 0)
+    APCS = define_ts_type("APCS", "Average Pairwise Cosine Similarity", 0)
     CCD = define_ts_type("CCD", "Consecutive Cosine Distance", -1)
-    ALL_TYPES = [APCD, CCD]
+    ALL_TYPES = [APCS, CCD]
 
 
 class TimeSeriesConfig(CommandConfigBase):
@@ -178,10 +178,10 @@ class TimeSeries:
         emb_len = word_embs[0][0].shape[0]
         time_slices = self._time_slices(word_embs)
         time_slices_control = self._shuffle(word_embs, time_slices)
-        apcd, ccd = TimeSeriesTypes.APCD, TimeSeriesTypes.CCD
+        apcs, ccd = TimeSeriesTypes.APCS, TimeSeriesTypes.CCD
         return {
-            apcd['main_id']: self._process_apcd(time_slices),
-            apcd['control_id']: self._process_apcd(time_slices_control),
+            apcs['main_id']: self._process_apcs(time_slices),
+            apcs['control_id']: self._process_apcs(time_slices_control),
             ccd['main_id']: self._process_ccd(time_slices, emb_len),
             ccd['control_id']: self._process_ccd(time_slices_control, emb_len)
         }
@@ -226,7 +226,7 @@ class TimeSeries:
         return time_slices_rand
 
     @staticmethod
-    def _process_apcd(time_slices):
+    def _process_apcs(time_slices):
         offset = min(time_slices)
         time_series = [0.0] * (max(time_slices) - offset + 1)
         for slice_id, slice_embs in time_slices.items():
@@ -244,4 +244,4 @@ class TimeSeries:
         for slice_id, slice_embs in time_slices.items():
             time_series[slice_id - offset] = np.mean(slice_embs, axis=0)
         off_by_1 = zip(time_series, time_series[1:])
-        return [cosim([i], [j])[0, 0] for i, j in off_by_1]
+        return [1 - cosim([i], [j])[0, 0] for i, j in off_by_1]
