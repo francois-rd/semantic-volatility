@@ -59,6 +59,9 @@ class PlotTimeSeriesConfig(CommandConfigBase):
             If positive, the value to set for the major xticks in matplotlib.
             Otherwise, leave xticks to the default layout.
 
+        legend_loc: (type: dict[str, float], default: {})
+            In the mean plots, the legend location for each type of time series.
+
         timeline_config: (type: dict, default: {})
             Timeline configurations to use. Any given parameters override the
             defaults. See utils.timeline.TimelineConfig for details.
@@ -74,6 +77,7 @@ class PlotTimeSeriesConfig(CommandConfigBase):
         self.num_anecdotes = kwargs.pop('num_anecdotes', 5)
         self.drop_last = kwargs.pop('drop_last', True)
         self.major_x_ticks = kwargs.pop('major_x_ticks', 0)
+        self.legend_loc = kwargs.pop('legend_loc', {})
         self.timeline_config = kwargs.pop('timeline_config', {})
         super().__init__(**kwargs)
 
@@ -192,7 +196,8 @@ class PlotTimeSeries:
                 swapped.setdefault(time_series_name, []).append(time_series)
         return swapped
 
-    def _finalize_plot(self, *, yticks, ylabel, title, filename, offset):
+    def _finalize_plot(self, *, yticks, ylabel, title, filename, offset,
+                       legend=True, legend_loc=None):
         plt.xticks(np.arange(self.max_time_slice + offset + 1))
         if self.config.major_x_ticks > 0:
             ax = plt.gca().xaxis
@@ -202,7 +207,9 @@ class PlotTimeSeries:
         plt.xlabel(f"Time Index ({self.slice_size}s since first appearance)")
         plt.ylabel(ylabel)
         plt.title(title)
-        plt.legend()
+        if legend:
+            plt.legend(loc=legend_loc or 'best')
+        plt.tight_layout()
         sub_dir = ensure_path(makepath(self.config.output_dir, self.style))
         plt.savefig(makepath(sub_dir, filename))
         plt.close()
@@ -212,7 +219,7 @@ class PlotTimeSeries:
         for ts_type in TimeSeriesTypes.ALL_TYPES:
             ts_type_name = ts_type['main_short_name']
             ylabel = ts_type['main_full_name']
-            title = f"{ts_type_name} Time Series"
+            title = f"Mean {ts_type_name} Time Series"
             filename = f"{'-'.join(wt for wt, _ in args)}-{ts_type_name}.pdf"
             plt.figure()
             for word_type, swapped_ts in args:
@@ -241,5 +248,8 @@ class PlotTimeSeries:
                                      color=color, alpha=0.2)
                     poly1d_fn = np.poly1d(np.polyfit(x, means, 1))
                     plt.plot(x, poly1d_fn(x), color=color, linestyle='dashed')
+            apcd_name = TimeSeriesTypes.APCS['main_short_name']
             self._finalize_plot(yticks=yticks, ylabel=ylabel, title=title,
-                                filename=filename, offset=ts_type['offset'])
+                                filename=filename, offset=ts_type['offset'],
+                                legend=apcd_name == ts_type_name,
+                                legend_loc=self.config.legend_loc[ts_type_name])
