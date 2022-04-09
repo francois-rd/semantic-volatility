@@ -1,0 +1,17 @@
+{
+    "experiment_dir": "main",
+    "raw_data_dir": "data/raw",
+    "neo_data_dir": "data/neologisms",
+    "surviving_neo_file": "surviving.pickle",
+    "dying_neo_file": "dying.pickle",
+    "existing_neo_file": "existing.pickle",
+    "usages_dir": "data/usages",
+    "map_file": "id_map.pickle",
+    "output_dir": "model/embeddings",
+    "surviving_output_file": "surviving.pickle",
+    "dying_output_file": "dying.pickle",
+    "existing_output_file": "existing.pickle",
+    "remove_urls": true,
+    "token_aggregator": "mean",
+    "model_name": "distilbert-base-uncased"
+}

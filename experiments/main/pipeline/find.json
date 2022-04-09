@@ -1,0 +1,7 @@
+{
+    "experiment_dir": "main",
+    "input_dir": "data/preprocessed",
+    "output_dir": "data/usages",
+    "usage_file": "usage_dict.pickle",
+    "map_file": "id_map.pickle"
+}

@@ -1,0 +1,17 @@
+{
+    "experiment_dir": "main",
+    "input_dir": "model/time_series",
+    "surviving_file": "surviving.pickle",
+    "dying_file": "dying.pickle",
+    "existing_file": "existing.pickle",
+    "output_dir": "results/stats",
+    "drop_last": true,
+    "major_x_ticks": 0,
+    "timeline_config": {
+        "start": 1577854800,
+        "end": 1609477200,
+        "early": 2,
+        "late": 2,
+        "slice_size": "month"
+    }
+}

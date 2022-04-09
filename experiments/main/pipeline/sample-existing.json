@@ -1,0 +1,6 @@
+{
+    "experiment_dir": "main",
+    "output_dir": "data/existing",
+    "existing_file": "existing.pickle",
+    "num_existing": 1000
+}

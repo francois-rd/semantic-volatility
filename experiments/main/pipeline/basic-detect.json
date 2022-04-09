@@ -1,0 +1,20 @@
+{
+    "experiment_dir": "main",
+    "input_dir": "data/usages",
+    "usage_file": "usage_dict.pickle",
+    "exist_data_dir": "data/existing",
+    "existing_aux_file": "existing.pickle",
+    "cap_data_dir": "data/cap_freq",
+    "output_dir": "data/neologisms",
+    "surviving_file": "surviving.pickle",
+    "dying_file": "dying.pickle",
+    "existing_output_file": "existing.pickle",
+    "min_usage_cutoff": 100,
+    "timeline_config": {
+        "start": 1577854800,
+        "end": 1609477200,
+        "early": 2,
+        "late": 2,
+        "slice_size": "month"
+    }
+}

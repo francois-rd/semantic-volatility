@@ -1,0 +1,28 @@
+{
+    "experiment_dir": "main",
+    "input_dir": "data/raw",
+    "output_dir": "data/preprocessed",
+    "exist_data_dir": "data/existing",
+    "existing_file": "existing.pickle",
+    "cap_data_dir": "data/cap_freq",
+    "subreddits": [
+        "news",
+        "politics",
+        "Conservative",
+        "PoliticalDiscussion",
+        "PoliticalHumor",
+        "Economics",
+        "technology",
+        "conspiracy",
+        "nottheonion",
+        "changemyview",
+        "memes",
+        "law",
+        "LGBTnews",
+        "inthenews",
+        "NeutralPolitics",
+        "moderatepolitics",
+        "uspolitics",
+        "geopolitics"
+    ]
+}

@@ -1,0 +1,33 @@
+{
+    "experiment_dir": "main",
+    "cache_dir": "data/cache",
+    "output_dir": "data/raw",
+    "num_workers": 4,
+    "subreddits": [
+        "news",
+        "politics",
+        "Conservative",
+        "PoliticalDiscussion",
+        "PoliticalHumor",
+        "Economics",
+        "technology",
+        "conspiracy",
+        "nottheonion",
+        "changemyview",
+        "memes",
+        "law",
+        "LGBTnews",
+        "inthenews",
+        "NeutralPolitics",
+        "moderatepolitics",
+        "uspolitics",
+        "geopolitics"
+    ],
+    "timeline_config": {
+        "start": 1577854800,
+        "end": 1609477200,
+        "early": 2,
+        "late": 2,
+        "slice_size": "month"
+    }
+}
