@@ -46,7 +46,7 @@ python src/main.py plot-stats --config experiments/main/pipeline/plot-stats.json
 
 These two steps only rely on the output of the step `time-series` and not on any previous steps. The output of `time-series` is provided in `experiments/main/model/time_series`.
 
-Each of these two steps only takes a few seconds to run and produces output files in `experiments/main/results`, some of which were used in the final report. Feel free to explore the plots that didn't make the cut to gain a richer understanding of the main results.
+These two steps only takes a few seconds to run and produces output files in `experiments/main/results`, some of which were used in the final report. Feel free to explore the plots that didn't make the cut to gain a richer understanding of the main results.
 
 ## Additional notes
 
