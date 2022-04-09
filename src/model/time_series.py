@@ -41,9 +41,9 @@ def define_ts_type(initialism, full_name, offset):
 
 
 class TimeSeriesTypes:
-    APCS = define_ts_type("APCS", "Average Pairwise Cosine Similarity", 0)
-    CCD = define_ts_type("CCD", "Consecutive Cosine Distance", -1)
-    ALL_TYPES = [APCS, CCD]
+    APD = define_ts_type("APD", "Average Pairwise Cosine Distance", 0)
+    SD = define_ts_type("SD", "Semantic Displacement", -1)
+    ALL_TYPES = [APD, SD]
 
 
 class TimeSeriesConfig(CommandConfigBase):
@@ -178,12 +178,12 @@ class TimeSeries:
         emb_len = word_embs[0][0].shape[0]
         time_slices = self._time_slices(word_embs)
         time_slices_control = self._shuffle(word_embs, time_slices)
-        apcs, ccd = TimeSeriesTypes.APCS, TimeSeriesTypes.CCD
+        apd, sd = TimeSeriesTypes.APD, TimeSeriesTypes.SD
         return {
-            apcs['main_id']: self._process_apcs(time_slices),
-            apcs['control_id']: self._process_apcs(time_slices_control),
-            ccd['main_id']: self._process_ccd(time_slices, emb_len),
-            ccd['control_id']: self._process_ccd(time_slices_control, emb_len)
+            apd['main_id']: self._process_apd(time_slices),
+            apd['control_id']: self._process_apd(time_slices_control),
+            sd['main_id']: self._process_sd(time_slices, emb_len),
+            sd['control_id']: self._process_sd(time_slices_control, emb_len)
         }
 
     def _time_slices(self, word_embs):
@@ -226,7 +226,7 @@ class TimeSeries:
         return time_slices_rand
 
     @staticmethod
-    def _process_apcs(time_slices):
+    def _process_apd(time_slices):
         offset = min(time_slices)
         time_series = [0.0] * (max(time_slices) - offset + 1)
         for slice_id, slice_embs in time_slices.items():
@@ -234,11 +234,11 @@ class TimeSeries:
                 continue  # Can't take pairwise distance of 1 item.
             upper_indices = np.triu_indices(len(slice_embs), 1)
             pairwise_cosims = cosim(slice_embs)[upper_indices]
-            time_series[slice_id - offset] = pairwise_cosims.mean()
+            time_series[slice_id - offset] = 1 - pairwise_cosims.mean()
         return time_series
 
     @staticmethod
-    def _process_ccd(time_slices, emb_length):
+    def _process_sd(time_slices, emb_length):
         offset = min(time_slices)
         time_series = [[0.0] * emb_length] * (max(time_slices) - offset + 1)
         for slice_id, slice_embs in time_slices.items():

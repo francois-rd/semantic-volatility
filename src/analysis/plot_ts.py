@@ -62,6 +62,9 @@ class PlotTimeSeriesConfig(CommandConfigBase):
         legend_loc: (type: dict[str, float], default: {})
             In the mean plots, the legend location for each type of time series.
 
+        plot_std: (type: bool, default: True)
+            Whether to plot the standard deviations in the mean plots or not.
+
         timeline_config: (type: dict, default: {})
             Timeline configurations to use. Any given parameters override the
             defaults. See utils.timeline.TimelineConfig for details.
@@ -78,6 +81,7 @@ class PlotTimeSeriesConfig(CommandConfigBase):
         self.drop_last = kwargs.pop('drop_last', True)
         self.major_x_ticks = kwargs.pop('major_x_ticks', 0)
         self.legend_loc = kwargs.pop('legend_loc', {})
+        self.plot_std = kwargs.pop('plot_std', True)
         self.timeline_config = kwargs.pop('timeline_config', {})
         super().__init__(**kwargs)
 
@@ -215,7 +219,6 @@ class PlotTimeSeries:
         plt.close()
 
     def _plot(self, *args):
-        yticks = np.arange(-0.2, 1.4, 0.2)
         for ts_type in TimeSeriesTypes.ALL_TYPES:
             ts_type_name = ts_type['main_short_name']
             ylabel = ts_type['main_full_name']
@@ -244,12 +247,20 @@ class PlotTimeSeries:
                     x = np.arange(len(means))
                     label = word_type + (" (C)" if id_ == 'control' else "")
                     color = plt.plot(x, means, label=label)[0].get_color()
-                    plt.fill_between(x, means - stds, means + stds,
-                                     color=color, alpha=0.2)
+                    if self.config.plot_std:
+                        plt.fill_between(x, means - stds, means + stds,
+                                         color=color, alpha=0.1)
+                    else:
+                        y = [max(means + stds), min(means - stds)]
+                        plt.scatter([1, 2], y, color='k', alpha=0)
                     poly1d_fn = np.poly1d(np.polyfit(x, means, 1))
                     plt.plot(x, poly1d_fn(x), color=color, linestyle='dashed')
-            apcd_name = TimeSeriesTypes.APCS['main_short_name']
+            apd_name = TimeSeriesTypes.APD['main_short_name']
+            if apd_name == ts_type_name:
+                yticks = np.arange(0.0, 0.4, 0.1)
+            else:
+                yticks = np.arange(-0.2, 1.4, 0.2)
             self._finalize_plot(yticks=yticks, ylabel=ylabel, title=title,
                                 filename=filename, offset=ts_type['offset'],
-                                legend=apcd_name == ts_type_name,
+                                legend=apd_name != ts_type_name,
                                 legend_loc=self.config.legend_loc[ts_type_name])
