@@ -50,6 +50,6 @@ These two steps only takes a few seconds to run and produces output files in `ex
 
 ## Additional notes
 
-+ Contact me directly to access any of the other intermediate output files.
++ Contact me directly to access any of the other intermediate output files. Many of these exceed the GitHub file size limit and can therefore not be stored here.
 + Running `python src/ppt.py` produces the plots for the PowerPoint presentation.
 + All other details are in the final report.
